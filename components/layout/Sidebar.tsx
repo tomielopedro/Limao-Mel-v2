@@ -11,8 +11,10 @@ import {
   DollarSign,
   Settings,
   BookOpen,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logout } from '@/app/login/actions'
 
 const navItems = [
   {
@@ -93,8 +95,17 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-forest-700">
-        <p className="text-forest-400 text-xs text-center">v2.0.0 &bull; 2024</p>
+      <div className="px-3 py-3 border-t border-forest-700 space-y-1">
+        <form action={logout}>
+          <button
+            type="submit"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-forest-800 hover:text-white transition-all duration-200"
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            <span>Sair</span>
+          </button>
+        </form>
+        <p className="text-forest-500 text-xs text-center pt-1">v2.0.0 &bull; 2025</p>
       </div>
     </aside>
   )

@@ -109,8 +109,13 @@ export function parseNFeXML(xmlText: string): NFeData {
   const parser = new DOMParser()
   const doc = parser.parseFromString(xmlText, 'text/xml')
 
+  // Check for parse errors
+  const parseError = doc.querySelector('parsererror')
+  if (parseError) throw new Error('XML inválido: ' + (parseError.textContent || 'erro de parse'))
+
+  // Use getElementsByTagNameNS('*', tag) to handle NFe namespace
   const getTagText = (parent: Element | Document, tag: string): string => {
-    const elements = parent.getElementsByTagName(tag)
+    const elements = parent.getElementsByTagNameNS('*', tag)
     if (elements.length > 0) return elements[0].textContent || ''
     return ''
   }
@@ -128,7 +133,7 @@ export function parseNFeXML(xmlText: string): NFeData {
   }
 
   // Get supplier (emitente)
-  const emit = doc.getElementsByTagName('emit')[0]
+  const emit = doc.getElementsByTagNameNS('*', 'emit')[0]
   const fornecedor = emit ? (getTagText(emit, 'xNome') || getTagText(emit, 'xFant') || '') : ''
 
   // Get total value
@@ -136,12 +141,12 @@ export function parseNFeXML(xmlText: string): NFeData {
   const valor_total = parseFloat(vNF) || 0
 
   // Get items (det elements)
-  const detElements = doc.getElementsByTagName('det')
+  const detElements = doc.getElementsByTagNameNS('*', 'det')
   const items: NFeItem[] = []
 
   for (let i = 0; i < detElements.length; i++) {
     const det = detElements[i]
-    const prod = det.getElementsByTagName('prod')[0]
+    const prod = det.getElementsByTagNameNS('*', 'prod')[0]
     if (!prod) continue
 
     const codigo = getTagText(prod, 'cProd')

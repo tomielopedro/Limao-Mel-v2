@@ -7,13 +7,12 @@ import type { Estoque } from '@/lib/types'
 import {
   Package,
   Upload,
+  Download,
   Search,
-  Filter,
   Pencil,
   Save,
   X,
   FileText,
-  AlertCircle,
   CheckCircle2,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -226,6 +225,29 @@ export default function EstoquePage() {
   const totalConsignado = estoque.reduce((sum, e) => sum + (e.qtd_consignado || 0), 0)
   const valorEstoque = estoque.reduce((sum, e) => sum + (e.quantidade || 0) * (e.preco_venda || 0), 0)
 
+  const handleExportCSV = () => {
+    const headers = ['Título', 'Código', 'EAN', 'Categoria', 'Qtd Próprio', 'Qtd Consignado', 'Preço Custo', 'Preço Venda', 'Nota Fiscal']
+    const rows = estoque.map((e) => [
+      `"${(e.livro || '').replace(/"/g, '""')}"`,
+      e.codigo || '',
+      e.ean || '',
+      e.categoria || '',
+      e.quantidade ?? 0,
+      e.qtd_consignado ?? 0,
+      (e.preco_custo ?? 0).toFixed(2).replace('.', ','),
+      (e.preco_venda ?? 0).toFixed(2).replace('.', ','),
+      e.nota_fiscal || '',
+    ])
+    const csv = [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `estoque_${new Date().toISOString().substring(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -241,6 +263,14 @@ export default function EstoquePage() {
             onChange={handleFileUpload}
             className="hidden"
           />
+          <button
+            onClick={handleExportCSV}
+            disabled={estoque.length === 0}
+            className="flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-40"
+          >
+            <Download className="w-4 h-4" />
+            Exportar CSV
+          </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 bg-lemon-500 hover:bg-lemon-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"

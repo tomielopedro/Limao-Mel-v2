@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Toaster } from 'sonner'
+import { createClient } from '@/lib/supabase/server'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -11,22 +12,29 @@ export const metadata: Metadata = {
   description: 'Sistema de gestão para a Livraria Limão e Mel',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <div className="flex h-screen bg-gray-50">
-          <Sidebar />
-          <main className="flex-1 overflow-auto">
-            <div className="p-6 max-w-screen-2xl mx-auto">
-              {children}
-            </div>
-          </main>
-        </div>
+        {user ? (
+          <div className="flex h-screen bg-gray-50">
+            <Sidebar />
+            <main className="flex-1 overflow-auto">
+              <div className="p-6 max-w-screen-2xl mx-auto">
+                {children}
+              </div>
+            </main>
+          </div>
+        ) : (
+          children
+        )}
         <Toaster
           position="top-right"
           richColors
