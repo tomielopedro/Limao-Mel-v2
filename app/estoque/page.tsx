@@ -138,8 +138,8 @@ export default function EstoquePage() {
 
     setImportLoading(true)
     try {
-      // Create or update nota fiscal
-      await supabase.from('financeiro_notas').insert({
+      // Create nota fiscal (ignore duplicate error)
+      const { error: notaError } = await supabase.from('financeiro_notas').insert({
         nota_fiscal: nfeData.numero_nota,
         data_emissao: nfeData.data_emissao || new Date().toISOString().substring(0, 10),
         fornecedor: nfeData.fornecedor,
@@ -147,36 +147,38 @@ export default function EstoquePage() {
         valor_total: nfeData.valor_total,
         status: 'Ativa',
       })
+      if (notaError && notaError.code !== '23505') {
+        throw new Error(`Erro ao salvar nota fiscal: ${notaError.message}`)
+      }
 
       // Insert/upsert stock items
       for (const item of selectedItems) {
-        // Check if item exists by EAN or codigo
-        const { data: existing } = await supabase
+        // Use maybeSingle to avoid error when no row is found
+        const orFilter = item.ean
+          ? `ean.eq.${item.ean},codigo.eq.${item.codigo}`
+          : `codigo.eq.${item.codigo}`
+
+        const { data: existing, error: findError } = await supabase
           .from('estoque')
           .select('id, quantidade, qtd_consignado')
-          .or(
-            item.ean
-              ? `ean.eq.${item.ean},codigo.eq.${item.codigo}`
-              : `codigo.eq.${item.codigo}`
-          )
-          .single()
+          .or(orFilter)
+          .maybeSingle()
+
+        if (findError) throw new Error(`Erro ao buscar item "${item.descricao}": ${findError.message}`)
 
         if (existing) {
-          // Update quantity
-          if (nfeData.tipo === 'Compra') {
-            await supabase
-              .from('estoque')
-              .update({ quantidade: (existing.quantidade || 0) + item.quantidade })
-              .eq('id', existing.id)
-          } else {
-            await supabase
-              .from('estoque')
-              .update({ qtd_consignado: (existing.qtd_consignado || 0) + item.quantidade })
-              .eq('id', existing.id)
-          }
+          const updateData = nfeData.tipo === 'Compra'
+            ? { quantidade: (existing.quantidade || 0) + item.quantidade }
+            : { qtd_consignado: (existing.qtd_consignado || 0) + item.quantidade }
+
+          const { error: updateError } = await supabase
+            .from('estoque')
+            .update(updateData)
+            .eq('id', existing.id)
+
+          if (updateError) throw new Error(`Erro ao atualizar "${item.descricao}": ${updateError.message}`)
         } else {
-          // Create new stock item
-          await supabase.from('estoque').insert({
+          const { error: insertError } = await supabase.from('estoque').insert({
             codigo: item.codigo,
             livro: item.descricao,
             ean: item.ean || null,
@@ -187,6 +189,8 @@ export default function EstoquePage() {
             preco_venda: item.preco_venda,
             nota_fiscal: nfeData.numero_nota,
           })
+
+          if (insertError) throw new Error(`Erro ao inserir "${item.descricao}": ${insertError.message}`)
         }
       }
 
