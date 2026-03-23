@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { BookOpen, Eye, EyeOff, Loader2 } from 'lucide-react'
+import Image from 'next/image'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { login } from './actions'
 
 export default function LoginPage() {
@@ -27,11 +28,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-forest-800 rounded-2xl flex items-center justify-center shadow-lg mb-4">
-            <BookOpen className="w-7 h-7 text-lemon-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Limão e Mel</h1>
-          <p className="text-sm text-gray-500 mt-1">Sistema de gestão</p>
+          <Image
+            src="/logo_limao_e_mel.png"
+            alt="Livraria Limão e Mel"
+            width={120}
+            height={120}
+            className="mb-3"
+            priority
+          />
+          <p className="text-sm text-gray-500">Sistema de gestão</p>
         </div>
 
         {/* Card */}

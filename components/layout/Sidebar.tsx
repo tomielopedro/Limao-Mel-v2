@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -10,7 +11,6 @@ import {
   Package,
   DollarSign,
   Settings,
-  BookOpen,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -60,16 +60,14 @@ export function Sidebar() {
   return (
     <aside className="w-60 bg-forest-800 flex flex-col h-screen sticky top-0 shrink-0">
       {/* Logo */}
-      <div className="px-4 py-5 border-b border-forest-700">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-lemon-500 rounded-lg flex items-center justify-center shadow-md">
-            <BookOpen className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-white font-bold text-sm leading-tight">Limão e Mel</h1>
-            <p className="text-forest-300 text-xs">Livraria</p>
-          </div>
-        </div>
+      <div className="px-4 py-4 border-b border-forest-700 flex justify-center">
+        <Image
+          src="/logo_limao_e_mel.png"
+          alt="Livraria Limão e Mel"
+          width={80}
+          height={80}
+          priority
+        />
       </div>
 
       {/* Navigation */}
