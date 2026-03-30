@@ -12,6 +12,7 @@ import {
   DollarSign,
   Settings,
   LogOut,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/app/login/actions'
@@ -54,20 +55,43 @@ const navItems = [
   },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="w-60 bg-forest-800 flex flex-col h-screen sticky top-0 shrink-0">
+    <aside
+      className={cn(
+        'w-60 bg-forest-800 flex flex-col shrink-0',
+        // Mobile: fixed overlay with slide transition
+        'fixed inset-y-0 left-0 z-50 transition-transform duration-300',
+        isOpen ? 'translate-x-0' : '-translate-x-full',
+        // Desktop: sticky in normal flow
+        'md:sticky md:top-0 md:h-screen md:translate-x-0 md:transition-none md:z-auto'
+      )}
+    >
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-forest-700 flex justify-center">
-        <Image
-          src="/logo_limao_e_mel.png"
-          alt="Livraria Limão e Mel"
-          width={80}
-          height={80}
-          priority
-        />
+      <div className="px-4 py-4 border-b border-forest-700 flex items-center justify-between">
+        <div className="flex-1 flex justify-center">
+          <Image
+            src="/logo_limao_e_mel.png"
+            alt="Livraria Limão e Mel"
+            width={80}
+            height={80}
+            priority
+          />
+        </div>
+        <button
+          onClick={onClose}
+          className="md:hidden text-gray-300 hover:text-white p-1 -mr-1"
+          aria-label="Fechar menu"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -80,6 +104,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 'sidebar-link',
                 isActive ? 'sidebar-link-active' : 'sidebar-link-inactive'

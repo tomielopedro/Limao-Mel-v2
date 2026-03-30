@@ -14,6 +14,7 @@ import {
   X,
   FileText,
   CheckCircle2,
+  PlusCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -45,6 +46,52 @@ export default function EstoquePage() {
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editPreco, setEditPreco] = useState('')
+
+  // Manual add state
+  const [showManualAdd, setShowManualAdd] = useState(false)
+  const [savingManual, setSavingManual] = useState(false)
+  const [newBook, setNewBook] = useState({
+    livro: '',
+    codigo: '',
+    ean: '',
+    categoria: '',
+    quantidade: 0,
+    qtd_consignado: 0,
+    preco_custo: 0,
+    preco_venda: 0,
+  })
+
+  const handleManualAdd = async () => {
+    if (!newBook.livro.trim()) {
+      toast.error('Título é obrigatório')
+      return
+    }
+    if (newBook.preco_venda <= 0) {
+      toast.error('Preço de venda deve ser maior que zero')
+      return
+    }
+    setSavingManual(true)
+    const { error } = await supabase.from('estoque').insert({
+      livro: newBook.livro.trim(),
+      codigo: newBook.codigo.trim() || null,
+      ean: newBook.ean.trim() || null,
+      categoria: newBook.categoria.trim() || null,
+      quantidade: newBook.quantidade,
+      qtd_consignado: newBook.qtd_consignado,
+      preco_custo: newBook.preco_custo,
+      preco_venda: newBook.preco_venda,
+      nota_fiscal: null,
+    })
+    setSavingManual(false)
+    if (error) {
+      toast.error('Erro ao cadastrar livro')
+    } else {
+      toast.success('Livro cadastrado com sucesso!')
+      setShowManualAdd(false)
+      setNewBook({ livro: '', codigo: '', ean: '', categoria: '', quantidade: 0, qtd_consignado: 0, preco_custo: 0, preco_venda: 0 })
+      fetchEstoque()
+    }
+  }
 
   // NFe Import state
   const [showImport, setShowImport] = useState(false)
@@ -259,7 +306,7 @@ export default function EstoquePage() {
           <h1 className="page-title">Estoque & XML</h1>
           <p className="text-gray-500 text-sm mt-1">{estoque.length} títulos</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -270,23 +317,167 @@ export default function EstoquePage() {
           <button
             onClick={handleExportCSV}
             disabled={estoque.length === 0}
-            className="flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-40"
+            className="flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium px-3 py-2 rounded-lg transition-colors disabled:opacity-40"
           >
             <Download className="w-4 h-4" />
-            Exportar CSV
+            <span className="hidden sm:inline">Exportar CSV</span>
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 bg-lemon-500 hover:bg-lemon-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium px-3 py-2 rounded-lg transition-colors"
           >
             <Upload className="w-4 h-4" />
-            Importar XML NF-e
+            <span className="hidden sm:inline">Importar XML</span>
+          </button>
+          <button
+            onClick={() => setShowManualAdd(true)}
+            className="flex items-center gap-2 bg-forest-700 hover:bg-forest-800 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Cadastrar Livro</span>
           </button>
         </div>
       </div>
 
+      {/* Manual Add Modal */}
+      {showManualAdd && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-forest-700" />
+                Cadastrar Livro Manualmente
+              </h2>
+              <button onClick={() => setShowManualAdd(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Título <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newBook.livro}
+                  onChange={(e) => setNewBook({ ...newBook, livro: e.target.value })}
+                  placeholder="Nome do livro"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lemon-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Código</label>
+                  <input
+                    type="text"
+                    value={newBook.codigo}
+                    onChange={(e) => setNewBook({ ...newBook, codigo: e.target.value })}
+                    placeholder="Código interno"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lemon-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">EAN / ISBN</label>
+                  <input
+                    type="text"
+                    value={newBook.ean}
+                    onChange={(e) => setNewBook({ ...newBook, ean: e.target.value })}
+                    placeholder="Código de barras"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lemon-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Categoria</label>
+                <input
+                  type="text"
+                  value={newBook.categoria}
+                  onChange={(e) => setNewBook({ ...newBook, categoria: e.target.value })}
+                  placeholder="Ex: Ficção, Infantil, Autoajuda..."
+                  list="categorias-list"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lemon-400"
+                />
+                <datalist id="categorias-list">
+                  {categorias.map((c) => <option key={c} value={c} />)}
+                </datalist>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Qtd. Próprio</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newBook.quantidade}
+                    onChange={(e) => setNewBook({ ...newBook, quantidade: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lemon-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Qtd. Consignado</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newBook.qtd_consignado}
+                    onChange={(e) => setNewBook({ ...newBook, qtd_consignado: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lemon-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Preço de Custo (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newBook.preco_custo}
+                    onChange={(e) => setNewBook({ ...newBook, preco_custo: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lemon-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Preço de Venda (R$) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newBook.preco_venda}
+                    onChange={(e) => setNewBook({ ...newBook, preco_venda: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lemon-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowManualAdd(false)}
+                className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleManualAdd}
+                disabled={savingManual}
+                className="flex items-center gap-2 bg-forest-700 hover:bg-forest-800 text-white text-sm font-medium px-4 py-2 rounded-lg disabled:opacity-70"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {savingManual ? 'Salvando...' : 'Cadastrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
         <div className="kpi-card">
           <p className="text-xs text-gray-500">Estoque Próprio</p>
           <p className="text-xl font-bold text-forest-700 mt-1">{totalEstoque}</p>
@@ -494,7 +685,7 @@ export default function EstoquePage() {
           <div className="py-16 text-center text-gray-400">
             <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
             <p className="text-sm">Nenhum item encontrado</p>
-            <p className="text-xs mt-1">Importe uma NF-e XML para adicionar produtos</p>
+            <p className="text-xs mt-1">Cadastre um livro manualmente ou importe uma NF-e XML</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
